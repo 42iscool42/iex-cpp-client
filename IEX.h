@@ -17,7 +17,8 @@
 #define IEX_API_V1_ENDPOINT "https://api.iextrading.com/1.0"
 
 namespace IEX {
-    namespace Resources {
+
+    namespace {
         static std::string getString(const Json::Value& v) {
             if (!v) {
                 return "";
@@ -85,310 +86,293 @@ namespace IEX {
             ss >> jsonData;
         }
 
-        struct FinancialsData {
-            std::string called_endpoint;
-            std::string stock_symbol;
-            std::string report_date;
-            int64_t gross_profit;
-            int64_t operating_revenue;
-            int64_t total_revenue;
-            int64_t operating_income;
-            int64_t net_income;
-            int64_t research_and_development;
-            int64_t operating_expense;
-            int64_t current_assets;
-            int64_t total_assets;
-            int64_t total_liabilities;
-            int64_t current_cash;
-            int64_t current_debt;
-            int64_t total_cash;
-            int64_t total_debt;
-            int64_t shareholder_equity;
-            int64_t cash_change;
-            int64_t cash_flow;
-            std::string operating_gains_losses;
-        };
+        static std::size_t httpRequestToStringCallback(const char* in,
+                                    std::size_t size,
+                                    std::size_t num,
+                                    std::string* out) {
+            const std::size_t totalBytes(size * num);
+            out->append(in, totalBytes);
+            return totalBytes;
+        }
+    }   
 
-        class Financials {
-        public:
-            static std::size_t callback(const char* in,
-                                        std::size_t size,
-                                        std::size_t num,
-                                        std::string* out) {
-                const std::size_t totalBytes(size * num);
-                out->append(in, totalBytes);
-                return totalBytes;
-            }
+    enum class Period { annual, quarter };
 
-            enum class Period { annual, quarter };
+    struct FinancialsData {
+        std::string called_endpoint;
+        std::string stock_symbol;
+        std::string report_date;
+        int64_t gross_profit;
+        int64_t operating_revenue;
+        int64_t total_revenue;
+        int64_t operating_income;
+        int64_t net_income;
+        int64_t research_and_development;
+        int64_t operating_expense;
+        int64_t current_assets;
+        int64_t total_assets;
+        int64_t total_liabilities;
+        int64_t current_cash;
+        int64_t current_debt;
+        int64_t total_cash;
+        int64_t total_debt;
+        int64_t shareholder_equity;
+        int64_t cash_change;
+        int64_t cash_flow;
+        std::string operating_gains_losses;
+    };
 
-            static std::vector<FinancialsData> get(
-                const std::string stock_symbol,
-                const Period period) {
-                std::string url = IEX_API_V1_ENDPOINT;
-                url += "/stock/" + std::string(stock_symbol) +
-                       "/financials?period=" +
-                       (Period::annual == period ? "annual" : "quarter");
+    struct KeyStatsData {
+        std::string called_endpoint;
+        std::string stock_symbol;
+        std::string company_name;
+        uint64_t market_cap;
+        double beta;
+        double week_52_high;
+        double week_52_low;
+        double week_52_change;
+        double short_interest;
+        std::string short_date;
+        double dividend_rate;
+        double dividend_yield;
+        std::string ex_dividend_date;
+        double latest_EPS;
+        std::string latest_EPS_date;
+        uint64_t shares_outstanding;
+        uint64_t _float;
+        double return_on_equity;
+        double consensus_EPS;
+        int number_of_estimates;
+        uint64_t EBITDA;
+        uint64_t revenue;
+        uint64_t gross_profit;
+        uint64_t cash;
+        uint64_t debt;
+        double ttm_EPS;
+        double revenue_per_share;
+        double revenue_per_employee;
+        double pe_ratio_high;
+        double pe_ratio_low;
+        double EPS_surprise_dollar;
+        double EPS_surprise_percent;
+        double return_on_assets;
+        double return_on_capital;
+        double profit_margin;
+        double price_to_sales;
+        double price_to_book;
+        double day_200_moving_avg;
+        double day_50_moving_avg;
+        double institution_percent;
+        double insider_percent;
+        double short_ratio;
+        double year_5_change_percent;
+        double year_2_change_percent;
+        double year_1_change_percent;
+        double ytd_change_percent;
+        double month_6_change_percent;
+        double month_3_change_percent;
+        double month_1_change_percent;
+        double day_5_change_percent;
+    };
 
-                Json::Value jsonData;
-                sendGetRequest(jsonData, url, callback);
+    struct CompanyData {
+        std::string called_endpoint;
+        std::string stock_symbol;
+        std::string company_name;
+        std::string exchange;
+        std::string industry;
+        std::string website;
+        std::string description;
+        std::string CEO;
+        std::string issue_type;
+        std::string sector;
+        std::vector<std::string> tags;
+    };
 
+    struct PriceData {
+        std::string called_endpoint;
+        std::string stock_symbol;
+        double latest_price;
+    };
+
+    struct Dividend {
+        std::string ex_date;
+        std::string payment_date;
+        std::string record_date;
+        std::string declared_date;
+        double amount;
+        std::string flag;
+        std::string type;
+        std::string qualified;
+        float indicated;
+    };
+
+    struct DividendsData {
+        std::string called_endpoint;
+        int number_of_dividends;
+        std::vector<Dividend> dividends;
+    };
+
+    class Stock {
+    public:
+
+        static std::vector<FinancialsData> getFinancials(
+            const std::string stock_symbol,
+            const Period period) {
+            std::string url = IEX_API_V1_ENDPOINT;
+            url += "/stock/" + std::string(stock_symbol) +
+                   "/financials?period=" +
+                   (Period::annual == period ? "annual" : "quarter");
+
+            Json::Value jsonData;
+            sendGetRequest(jsonData, url, httpRequestToStringCallback);
+
+            FinancialsData fd;
+            fd.called_endpoint = url;
+            fd.stock_symbol = stock_symbol;
+
+            std::vector<FinancialsData> results;
+            for (const auto& f : jsonData["financials"]) {
                 FinancialsData fd;
-                fd.called_endpoint = url;
-                fd.stock_symbol = stock_symbol;
-
-                std::vector<FinancialsData> results;
-                for (const auto& f : jsonData["financials"]) {
-                    FinancialsData fd;
-
-                    // clang-format off
-                    fd.report_date              = getString(f["reportDate"]);
-                    fd.gross_profit             = getInt64(f["grossProfit"]);
-                    fd.operating_revenue        = getInt64(f["operatingRevenue"]);
-                    fd.total_revenue            = getInt64(f["totalRevenue"]);
-                    fd.operating_income         = getInt64(f["operatingIncome"]);
-                    fd.net_income               = getInt64(f["netIncome"]);
-                    fd.research_and_development = getInt64(f["researchAndDevelopment"]);
-                    fd.operating_expense        = getInt64(f["operatingExpense"]);
-                    fd.current_assets           = getInt64(f["currentAssets"]);
-                    fd.total_assets             = getInt64(f["totalAssets"]);
-                    fd.total_liabilities        = getInt64(f["totalLiabilities"]);
-                    fd.current_cash             = getInt64(f["currentCash"]);
-                    fd.current_debt             = getInt64(f["currentDebt"]);
-                    fd.total_cash               = getInt64(f["totalCash"]);
-                    fd.total_debt               = getInt64(f["totalDebt"]);
-                    fd.shareholder_equity       = getInt64(f["shareholderEquity"]);
-                    fd.cash_change              = getInt64(f["cashChange"]);
-                    fd.cash_flow                = getInt64(f["cashFlow"]);
-                    fd.operating_gains_losses   = getString(f["operatingGainsLosses"]);
-                    // clang-format on
-
-                    results.push_back(fd);
-                }
-                return results;
-            }
-        };
-
-        struct KeyStatsData {
-            std::string called_endpoint;
-            std::string stock_symbol;
-            std::string company_name;
-            uint64_t marketcap;
-            double beta;
-            double week52high;
-            double week52low;
-            double week52change;
-            double shortInterest;
-            std::string shortDate;
-            double dividendRate;
-            double dividendYield;
-            std::string exDividendDate;
-            double latestEPS;
-            std::string latestEPSDate;
-            uint64_t sharesOutstanding;
-            uint64_t _float;
-            double returnOnEquity;
-            double consensusEPS;
-            int numberOfEstimates;
-            uint64_t EBITDA;
-            uint64_t revenue;
-            uint64_t grossProfit;
-            uint64_t cash;
-            uint64_t debt;
-            double ttmEPS;
-            double revenuePerShare;
-            double revenuePerEmployee;
-            double peRatioHigh;
-            double peRatioLow;
-            double EPSSurpriseDollar;
-            double EPSSurprisePercent;
-            double returnOnAssets;
-            double returnOnCapital;
-            double profitMargin;
-            double priceToSales;
-            double priceToBook;
-            double day200MovingAvg;
-            double day50MovingAvg;
-            double institutionPercent;
-            double insiderPercent;
-            double shortRatio;
-            double year5ChangePercent;
-            double year2ChangePercent;
-            double year1ChangePercent;
-            double ytdChangePercent;
-            double month6ChangePercent;
-            double month3ChangePercent;
-            double month1ChangePercent;
-            double day5ChangePercent;
-        };
-
-        class KeyStats {
-        public:
-            static std::size_t callback(const char* in,
-                                        std::size_t size,
-                                        std::size_t num,
-                                        std::string* out) {
-                const std::size_t totalBytes(size * num);
-                out->append(in, totalBytes);
-                return totalBytes;
-            }
-
-            static KeyStatsData get(const std::string stock_symbol) {
-                std::string url = IEX_API_V1_ENDPOINT;
-                url += "/stock/" + std::string(stock_symbol) + "/stats";
-
-                Json::Value jsonData;
-                sendGetRequest(jsonData, url, callback);
-
-                KeyStatsData ksd;
 
                 // clang-format off
-                ksd.called_endpoint     = url;
-                ksd.stock_symbol        = stock_symbol;
-                ksd.company_name        = getString(jsonData["companyName"]);
-                ksd.marketcap           = getUInt64(jsonData["marketcap"]);
-                ksd.beta                = getDouble(jsonData["beta"]);
-                ksd.week52high          = getDouble(jsonData["week52high"]);
-                ksd.week52low           = getDouble(jsonData["week52low"]);
-                ksd.week52change        = getDouble(jsonData["week52change"]);
-                ksd.shortInterest       = getDouble(jsonData["shortInterest"]);
-                ksd.shortDate           = getString(jsonData["shortDate"]);
-                ksd.dividendRate        = getDouble(jsonData["dividendRate"]);
-                ksd.dividendYield       = getDouble(jsonData["dividendYield"]);
-                ksd.exDividendDate      = getString(jsonData["exDividentDate"]);
-                ksd.latestEPS           = getDouble(jsonData["latestEPS"]);
-                ksd.latestEPSDate       = getString(jsonData["latestEPSDate"]);
-                ksd.sharesOutstanding   = getUInt64(jsonData["sharedOutstanding"]);
-                ksd._float              = getUInt64(jsonData["float"]);
-                ksd.returnOnEquity      = getDouble(jsonData["returnOnEquity"]);
-                ksd.consensusEPS        = getDouble(jsonData["consensusEPS"]);
-                ksd.numberOfEstimates   = getInt(jsonData["numberOfEstimates"]);
-                ksd.EBITDA              = getUInt64(jsonData["EBITDA"]);
-                ksd.revenue             = getUInt64(jsonData["revenue"]);
-                ksd.grossProfit         = getUInt64(jsonData["grossProfit"]);
-                ksd.cash                = getUInt64(jsonData["cash"]);
-                ksd.debt                = getUInt64(jsonData["debut"]);
-                ksd.ttmEPS              = getDouble(jsonData["ttmEPS"]);
-                ksd.revenuePerShare     = getDouble(jsonData["revenuePerShare"]);
-                ksd.revenuePerEmployee  = getDouble(jsonData["revenuePerEmployee"]);
-                ksd.peRatioHigh         = getDouble(jsonData["peRatioHigh"]);
-                ksd.peRatioLow          = getDouble(jsonData["peRatioLow"]);
-                ksd.EPSSurpriseDollar   = getDouble(jsonData["EPSSurpriseDollar"]);
-                ksd.EPSSurprisePercent  = getDouble(jsonData["EPSSurprisePercent"]);
-                ksd.returnOnAssets      = getDouble(jsonData["returnOnAssets"]);
-                ksd.returnOnCapital     = getDouble(jsonData["returnOnCapital"]);
-                ksd.profitMargin        = getDouble(jsonData["profitMargin"]);
-                ksd.priceToSales        = getDouble(jsonData["priceToSales"]);
-                ksd.priceToBook         = getDouble(jsonData["priceToBook"]);
-                ksd.day200MovingAvg     = getDouble(jsonData["day200MovingAvg"]);
-                ksd.day50MovingAvg      = getDouble(jsonData["day50MovingAvg"]);
-                ksd.institutionPercent  = getDouble(jsonData["institutionPercent"]);
-                ksd.insiderPercent      = getDouble(jsonData["insiderPercent"]);
-                ksd.shortRatio          = getDouble(jsonData["shortRatio"]);
-                ksd.year5ChangePercent  = getDouble(jsonData["year5ChangePercent"]);
-                ksd.year2ChangePercent  = getDouble(jsonData["year2ChangePercent"]);
-                ksd.year1ChangePercent  = getDouble(jsonData["year1ChangePercent"]);
-                ksd.ytdChangePercent    = getDouble(jsonData["ytdChangePercent"]);
-                ksd.month6ChangePercent = getDouble(jsonData["month6ChangePercent"]);
-                ksd.month3ChangePercent = getDouble(jsonData["month3ChangePercent"]);
-                ksd.month1ChangePercent = getDouble(jsonData["month1ChangePercent"]);
-                ksd.day5ChangePercent   = getDouble(jsonData["day5ChangePercent"]);
+                fd.report_date              = getString(f["reportDate"]);
+                fd.gross_profit             = getInt64(f["grossProfit"]);
+                fd.operating_revenue        = getInt64(f["operatingRevenue"]);
+                fd.total_revenue            = getInt64(f["totalRevenue"]);
+                fd.operating_income         = getInt64(f["operatingIncome"]);
+                fd.net_income               = getInt64(f["netIncome"]);
+                fd.research_and_development = getInt64(f["researchAndDevelopment"]);
+                fd.operating_expense        = getInt64(f["operatingExpense"]);
+                fd.current_assets           = getInt64(f["currentAssets"]);
+                fd.total_assets             = getInt64(f["totalAssets"]);
+                fd.total_liabilities        = getInt64(f["totalLiabilities"]);
+                fd.current_cash             = getInt64(f["currentCash"]);
+                fd.current_debt             = getInt64(f["currentDebt"]);
+                fd.total_cash               = getInt64(f["totalCash"]);
+                fd.total_debt               = getInt64(f["totalDebt"]);
+                fd.shareholder_equity       = getInt64(f["shareholderEquity"]);
+                fd.cash_change              = getInt64(f["cashChange"]);
+                fd.cash_flow                = getInt64(f["cashFlow"]);
+                fd.operating_gains_losses   = getString(f["operatingGainsLosses"]);
                 // clang-format on
 
-                return ksd;
+                results.push_back(fd);
             }
-        };
+            return results;
+        }
 
-        struct CompanyData {
-            std::string called_endpoint;
-            std::string stock_symbol;
-            std::string company_name;
-            std::string exchange;
-            std::string industry;
-            std::string website;
-            std::string description;
-            std::string CEO;
-            std::string issue_type;
-            std::string sector;
-            std::vector<std::string> tags;
-        };
+        static KeyStatsData getKeyStats(const std::string stock_symbol) {
+            std::string url = IEX_API_V1_ENDPOINT;
+            url += "/stock/" + std::string(stock_symbol) + "/stats";
 
-        class Company {
-        public:
-            static std::size_t callback(const char* in,
-                                        std::size_t size,
-                                        std::size_t num,
-                                        std::string* out) {
-                const std::size_t totalBytes(size * num);
-                out->append(in, totalBytes);
-                return totalBytes;
+            Json::Value jsonData;
+            sendGetRequest(jsonData, url, httpRequestToStringCallback);
+
+            KeyStatsData ksd;
+
+            // clang-format off
+            ksd.called_endpoint        = url;
+            ksd.stock_symbol           = stock_symbol;
+            ksd.company_name           = getString(jsonData["companyName"]);
+            ksd.market_cap             = getUInt64(jsonData["marketcap"]);
+            ksd.beta                   = getDouble(jsonData["beta"]);
+            ksd.week_52_high           = getDouble(jsonData["week52high"]);
+            ksd.week_52_low            = getDouble(jsonData["week52low"]);
+            ksd.week_52_change         = getDouble(jsonData["week52change"]);
+            ksd.short_interest         = getDouble(jsonData["shortInterest"]);
+            ksd.short_date             = getString(jsonData["shortDate"]);
+            ksd.dividend_rate          = getDouble(jsonData["dividendRate"]);
+            ksd.dividend_yield         = getDouble(jsonData["dividendYield"]);
+            ksd.ex_dividend_date       = getString(jsonData["exDividentDate"]);
+            ksd.latest_EPS             = getDouble(jsonData["latestEPS"]);
+            ksd.latest_EPS_date        = getString(jsonData["latestEPSDate"]);
+            ksd.shares_outstanding     = getUInt64(jsonData["sharedOutstanding"]);
+            ksd._float                 = getUInt64(jsonData["float"]);
+            ksd.return_on_equity       = getDouble(jsonData["returnOnEquity"]);
+            ksd.consensus_EPS          = getDouble(jsonData["consensusEPS"]);
+            ksd.number_of_estimates    = getInt(jsonData["numberOfEstimates"]);
+            ksd.EBITDA                 = getUInt64(jsonData["EBITDA"]);
+            ksd.revenue                = getUInt64(jsonData["revenue"]);
+            ksd.gross_profit           = getUInt64(jsonData["grossProfit"]);
+            ksd.cash                   = getUInt64(jsonData["cash"]);
+            ksd.debt                   = getUInt64(jsonData["debut"]);
+            ksd.ttm_EPS                = getDouble(jsonData["ttmEPS"]);
+            ksd.revenue_per_share      = getDouble(jsonData["revenuePerShare"]);
+            ksd.revenue_per_employee   = getDouble(jsonData["revenuePerEmployee"]);
+            ksd.pe_ratio_high          = getDouble(jsonData["peRatioHigh"]);
+            ksd.pe_ratio_low           = getDouble(jsonData["peRatioLow"]);
+            ksd.EPS_surprise_dollar    = getDouble(jsonData["EPSSurpriseDollar"]);
+            ksd.EPS_surprise_percent   = getDouble(jsonData["EPSSurprisePercent"]);
+            ksd.return_on_assets       = getDouble(jsonData["returnOnAssets"]);
+            ksd.return_on_capital      = getDouble(jsonData["returnOnCapital"]);
+            ksd.profit_margin          = getDouble(jsonData["profitMargin"]);
+            ksd.price_to_sales         = getDouble(jsonData["priceToSales"]);
+            ksd.price_to_book          = getDouble(jsonData["priceToBook"]);
+            ksd.day_200_moving_avg     = getDouble(jsonData["day200MovingAvg"]);
+            ksd.day_50_moving_avg      = getDouble(jsonData["day50MovingAvg"]);
+            ksd.institution_percent    = getDouble(jsonData["institutionPercent"]);
+            ksd.insider_percent        = getDouble(jsonData["insiderPercent"]);
+            ksd.short_ratio            = getDouble(jsonData["shortRatio"]);
+            ksd.year_5_change_percent  = getDouble(jsonData["year5ChangePercent"]);
+            ksd.year_2_change_percent  = getDouble(jsonData["year2ChangePercent"]);
+            ksd.year_1_change_percent  = getDouble(jsonData["year1ChangePercent"]);
+            ksd.ytd_change_percent     = getDouble(jsonData["ytdChangePercent"]);
+            ksd.month_6_change_percent = getDouble(jsonData["month6ChangePercent"]);
+            ksd.month_3_change_percent = getDouble(jsonData["month3ChangePercent"]);
+            ksd.month_1_change_percent = getDouble(jsonData["month1ChangePercent"]);
+            ksd.day_5_change_percent   = getDouble(jsonData["day5ChangePercent"]);
+            // clang-format on
+
+            return ksd;
+        }
+
+        static CompanyData getCompany(const std::string stock_symbol) {
+            std::string url = IEX_API_V1_ENDPOINT;
+            url += "/stock/" + std::string(stock_symbol) + "/company";
+
+            Json::Value jsonData;
+            sendGetRequest(jsonData, url, httpRequestToStringCallback);
+
+            CompanyData cd;
+
+            // clang-format off
+            cd.called_endpoint = url;
+            cd.stock_symbol    = stock_symbol;
+            cd.company_name    = getString(jsonData["companyName"]);
+            cd.exchange        = getString(jsonData["exchange"]);
+            cd.industry        = getString(jsonData["industry"]);
+            cd.website         = getString(jsonData["website"]);
+            cd.description     = getString(jsonData["description"]);
+            cd.CEO             = getString(jsonData["CEO"]);
+            cd.issue_type      = getString(jsonData["issue_type"]);
+            cd.sector          = getString(jsonData["sector"]);
+            // clang-format on
+
+            // Iterate over all tags and add to vector
+            auto tags = jsonData["tags"];
+            for (const auto& t : tags) {
+                cd.tags.push_back(t.asString());
             }
 
-            static CompanyData get(const std::string stock_symbol) {
-                std::string url = IEX_API_V1_ENDPOINT;
-                url += "/stock/" + std::string(stock_symbol) + "/company";
+            return cd;
+        }
 
-                Json::Value jsonData;
-                sendGetRequest(jsonData, url, callback);
+        static PriceData getPrice(const std::string stock_symbol) {
+            std::string url = IEX_API_V1_ENDPOINT;
+            url += "/stock/" + std::string(stock_symbol) + "/price";
 
-                CompanyData cd;
+            Json::Value jsonData;
+            sendGetRequest(jsonData, url, httpRequestToStringCallback);
 
-                // clang-format off
-                cd.called_endpoint = url;
-                cd.stock_symbol    = stock_symbol;
-                cd.company_name    = jsonData["companyName"].asString();
-                cd.exchange        = jsonData["exchange"].asString();
-                cd.industry        = jsonData["industry"].asString();
-                cd.website         = jsonData["website"].asString();
-                cd.description     = jsonData["description"].asString();
-                cd.CEO             = jsonData["CEO"].asString();
-                cd.issue_type      = jsonData["issue_type"].asString();
-                cd.sector          = jsonData["sector"].asString();
-                // clang-format on
+            PriceData pd;
+            pd.called_endpoint = url;
+            pd.stock_symbol = stock_symbol;
+            pd.latest_price = jsonData.asDouble();
 
-                // Iterate over all tags and add to vector
-                auto tags = jsonData["tags"];
-                for (const auto& t : tags) {
-                    cd.tags.push_back(t.asString());
-                }
-
-                return cd;
-            }
-        };
-
-        struct PriceData {
-            std::string called_endpoint;
-            std::string stock_symbol;
-            double latest_price;
-        };
-
-        class Price {
-        public:
-            static std::size_t callback(const char* in,
-                                        std::size_t size,
-                                        std::size_t num,
-                                        std::string* out) {
-                const std::size_t totalBytes(size * num);
-                out->append(in, totalBytes);
-                return totalBytes;
-            }
-
-            static PriceData get(const std::string stock_symbol) {
-                std::string url = IEX_API_V1_ENDPOINT;
-                url += "/stock/" + std::string(stock_symbol) + "/price";
-
-                Json::Value jsonData;
-                sendGetRequest(jsonData, url, callback);
-
-                PriceData pd;
-                pd.called_endpoint = url;
-                pd.stock_symbol = stock_symbol;
-                pd.latest_price = jsonData.asDouble();
-
-                return pd;
-            }
-        };
-    }  // namespace Resources
+            return pd;
+        }
+    };
 }  // namespace IEX
 
 #endif  // IEX_H_INCLUDED
