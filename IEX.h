@@ -372,6 +372,66 @@ namespace IEX {
 
             return pd;
         }
+
+        // Input:
+        //  stock_symbol - the stock symbol you want to query
+        //  time_period - the time period you want to look in.  Allowed
+        //  values are: 5y, 2y, 1y, ytd, 6m, 3m, and 1m
+        //
+        // Output:
+        //  Will returns a DividendsData struct with the relevant info
+        //  on success or an empty struct with the success field set to
+        //  false
+        static DividendsData getDividends(const std::string stock_symbol,
+                                         const std::string time_period) {
+            std::string url = std::string(IEX_API_V1_ENDPOINT) +
+                              "/stock/" +
+                              std::string(stock_symbol) +
+                              "/dividends/" +
+                              std::string(time_period);
+
+            Json::Value json_data;
+            sendGetRequest(json_data, url, httpRequestToStringCallback);
+
+            DividendsData dividends_data;
+
+            dividends_data.called_endpoint = url;
+            dividends_data.number_of_dividends = json_data.size();
+            std::vector<Dividend> dividends;
+            auto beginning = dividends.begin();
+
+            for (const auto& dividend_json : json_data) {
+                Dividend dividend;
+                dividend.ex_date = getString(dividend_json["exDate"]);
+
+                dividend.payment_date = getString(dividend_json["paymentDate"]);
+
+                dividend.record_date = getString(dividend_json["recordDate"]);
+
+                dividend.declared_date = getString(dividend_json["declaredDate"]);
+
+                dividend.amount = getDouble(dividend_json["amount"]);
+
+                dividend.flag = getString(dividend_json["flag"]);
+
+                dividend.type = getString(dividend_json["type"]);
+
+                dividend.qualified = getString(dividend_json["qualified"]);
+
+                std::string indicated = getString(dividend_json["indicated"]);
+
+                if (indicated.length() == 0) {
+                    dividend.indicated = 0.0f;
+                } else {
+                    dividend.indicated = std::stof(indicated);
+                }
+
+                beginning = dividends.insert(beginning, dividend);
+            }
+
+            dividends_data.dividends = dividends;
+            return dividends_data;
+        }
     };
 }  // namespace IEX
 
