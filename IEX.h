@@ -213,6 +213,12 @@ namespace IEX {
         std::vector<Dividend> dividends;
     };
 
+    struct CompanyLogoData {
+        std::string called_endpoint;
+        std::string stock_symbol;
+        std::string logo_url;
+    };
+
     class Stock {
     public:
 
@@ -432,6 +438,20 @@ namespace IEX {
             dividends_data.dividends = dividends;
             return dividends_data;
         }
+
+        static CompanyLogoData getCompanyLogo(const std::string& stock_symbol) {
+                std::string url = IEX_API_V1_ENDPOINT;
+                url += "/stock/" + stock_symbol + "/logo";
+
+                Json::Value jsonData = sendGetRequest(url);
+
+                CompanyLogoData data;
+                data.called_endpoint = url;
+                data.stock_symbol = stock_symbol;
+                data.logo_url = jsonData["url"].asString();
+
+                return data;
+            }
     };
 }  // namespace IEX
 

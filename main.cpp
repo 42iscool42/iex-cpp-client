@@ -129,6 +129,14 @@ void print_dividends(const std::string& symbol, const std::string& range) {
     }
 }
 
+void print_company_logo(const std::string& symbol) {
+    IEX::Resources::CompanyLogoData cld = IEX::Stock::getCompanyLogo(symbol);
+
+    cout << "Called Endpoint: " << cld.called_endpoint << endl;
+    cout << "Stock Symbol: " << cld.stock_symbol << endl;
+    cout << "Company Logo URL: " << cld.logo_url << endl;
+}
+
 int main(int argc, char* argv[]) {
     if (argc == 2) {
         std::string symbol = argv[1];
@@ -137,9 +145,11 @@ int main(int argc, char* argv[]) {
         print_stats(symbol);
         print_financials(symbol, IEX::Period::annual);
         print_dividends(symbol, "3m");
+        print_company_logo(symbol);
         return 0;
     } else {
         cout << "Error! Usage: " << argv[0] << " [stock symbol]" << endl;
         return 1;
     }
 }
+
