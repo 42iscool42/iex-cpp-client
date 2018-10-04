@@ -130,7 +130,7 @@ void print_dividends(const std::string& symbol, const std::string& range) {
 }
 
 void print_company_logo(const std::string& symbol) {
-    IEX::Resources::CompanyLogoData cld = IEX::Stock::getCompanyLogo(symbol);
+    IEX::CompanyLogoData cld = IEX::Stock::getCompanyLogo(symbol);
 
     cout << "Called Endpoint: " << cld.called_endpoint << endl;
     cout << "Stock Symbol: " << cld.stock_symbol << endl;

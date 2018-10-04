@@ -411,23 +411,16 @@ namespace IEX {
                 dividend.ex_date = getString(dividend_json["exDate"]);
 
                 dividend.payment_date = getString(dividend_json["paymentDate"]);
-
                 dividend.record_date = getString(dividend_json["recordDate"]);
-
                 dividend.declared_date = getString(dividend_json["declaredDate"]);
-
                 dividend.amount = getDouble(dividend_json["amount"]);
-
                 dividend.flag = getString(dividend_json["flag"]);
-
                 dividend.type = getString(dividend_json["type"]);
-
                 dividend.qualified = getString(dividend_json["qualified"]);
-
                 std::string indicated = getString(dividend_json["indicated"]);
 
                 if (indicated.length() == 0) {
-                    dividend.indicated = 0.0f;
+                    dividend.indicated = 0.0;
                 } else {
                     dividend.indicated = std::stof(indicated);
                 }
@@ -443,12 +436,13 @@ namespace IEX {
                 std::string url = IEX_API_V1_ENDPOINT;
                 url += "/stock/" + stock_symbol + "/logo";
 
-                Json::Value jsonData = sendGetRequest(url);
+                Json::Value json_data;
+                sendGetRequest(json_data, url, httpRequestToStringCallback);
 
                 CompanyLogoData data;
                 data.called_endpoint = url;
                 data.stock_symbol = stock_symbol;
-                data.logo_url = jsonData["url"].asString();
+                data.logo_url = getString(json_data["url"]);
 
                 return data;
             }
