@@ -27,6 +27,15 @@ void print_company(const std::string& symbol) {
         cout << "  " << t << endl;
     }
 }
+
+void print_company_logo(const std::string& symbol) {
+    IEX::CompanyLogoData cld = IEX::Stock::getCompanyLogo(symbol);
+
+    cout << "Called Endpoint: " << cld.called_endpoint << endl;
+    cout << "Stock Symbol: " << cld.stock_symbol << endl;
+    cout << "Company Logo URL: " << cld.logo_url << endl;
+}
+
 void print_stats(const std::string& symbol) {
     IEX::KeyStatsData ksd = IEX::Stock::getKeyStats(symbol);
     cout << "Called Endpoint: " << ksd.called_endpoint << endl;
@@ -129,24 +138,76 @@ void print_dividends(const std::string& symbol, const std::string& range) {
     }
 }
 
-void print_company_logo(const std::string& symbol) {
-    IEX::CompanyLogoData cld = IEX::Stock::getCompanyLogo(symbol);
+void menu_options(const std::string& symbol) {
+    cout << "\n--------------------------------------------------" << endl;
+    cout << "OPTIONS for [" + symbol + "]" << endl;
+    cout << " 1. Company Information" << endl;
+    cout << " 2. Stock/Company Logo" << endl;
+    cout << " 3. Stock/Company Latest Price" << endl;
+    cout << " 4. Stock/Company Statistics" << endl;
+    cout << " 5. Stock/Company Financial Reports" << endl;
+    cout << " 6. Stock/Company Dividends" << endl;
+    cout << " 0. Quit\n\n" << endl;
+}
 
-    cout << "Called Endpoint: " << cld.called_endpoint << endl;
-    cout << "Stock Symbol: " << cld.stock_symbol << endl;
-    cout << "Company Logo URL: " << cld.logo_url << endl;
+
+void print_menu(const std::string& symbol) {
+    int choice;
+    menu_options(symbol);
+    std::cin >> choice;
+
+    while (choice != 0) {
+        switch(choice) {
+        case 1:
+           print_company(symbol);
+           break;
+        case 2:
+           print_company_logo(symbol);
+           break;
+        case 3:
+           print_price(symbol);
+           break;
+        case 4:
+           print_stats(symbol);
+           break;
+        case 5:
+           print_financials(symbol, IEX::Period::annual);
+           break;
+        case 6:
+           print_dividends(symbol,"3m");
+           break;
+        case 0:
+           std::cout << "Bye!" << endl;
+           break;
+        default:
+           std::cout << "Invalid Option" << endl;
+           break;
+        }
+        cin.clear();
+        menu_options(symbol);
+        std::cin >> choice;
+   }
+}
+
+void run_all_methods(const std::string& symbol) {
+   print_company(symbol);
+   print_company_logo(symbol);
+   print_price(symbol);
+   print_stats(symbol);
+   print_financials(symbol, IEX::Period::annual);
+   print_dividends(symbol, "3m");
 }
 
 int main(int argc, char* argv[]) {
     if (argc == 2) {
         std::string symbol = argv[1];
-        print_company(symbol);
-        print_price(symbol);
-        print_stats(symbol);
-        print_financials(symbol, IEX::Period::annual);
-        print_dividends(symbol, "3m");
-        print_company_logo(symbol);
-        return 0;
+
+        if (symbol == "TRAVIS_CI") {
+          run_all_methods("AMZN");
+        } else {
+          print_menu(symbol);
+          return 0;
+        }
     } else {
         cout << "Error! Usage: " << argv[0] << " [stock symbol]" << endl;
         return 1;
