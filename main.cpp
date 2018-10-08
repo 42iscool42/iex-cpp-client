@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
             print_stats(symbol);
         } else if (argument == "-r") {
             print_financials(symbol,
-                             IEX::Resources::Financials::Period::annual);
+                             IEX::Period::annual);
         } else if (argument == "-a") {
             run_all_methods("AMZN");
         } else {
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
         }
         return 0;
     } else {
-        menu_options();
+        print_menu(argv[1]);
         return 1;
     }
 }
