@@ -117,7 +117,6 @@ void print_financials(const std::string& symbol,
         cout << "operating_gains_losses: " << f.operating_gains_losses << endl;
     }
 }
-
 void print_dividends(const std::string& symbol, const std::string& range) {
     IEX::DividendsData data = IEX::Stock::getDividends(symbol, range);
     cout << "Called Endpoint: " << data.called_endpoint << endl;
@@ -199,18 +198,29 @@ void run_all_methods(const std::string& symbol) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc == 2) {
+    if (argc == 3) {
         std::string symbol = argv[1];
+        std::string argument = argv[2];
 
-        if (symbol == "TRAVIS_CI") {
-          run_all_methods("AMZN");
+        if (argument == "-c") {
+            print_company(symbol);
+        } else if (argument == "-l") {
+            print_company_logo(symbol);
+        } else if (argument == "-p") {
+            print_price(symbol);
+        } else if (argument == "-s") {
+            print_stats(symbol);
+        } else if (argument == "-r") {
+            print_financials(symbol,
+                             IEX::Resources::Financials::Period::annual);
+        } else if (argument == "-a") {
+            run_all_methods("AMZN");
         } else {
-          print_menu(symbol);
-          return 0;
+            std::cout << "Option Invalid" << endl;
         }
+        return 0;
     } else {
-        cout << "Error! Usage: " << argv[0] << " [stock symbol]" << endl;
+        menu_options();
         return 1;
     }
 }
-
